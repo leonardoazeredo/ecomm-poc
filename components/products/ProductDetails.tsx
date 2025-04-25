@@ -1,5 +1,6 @@
 import { ProductDetail } from "@/lib/placeholder-data";
 import Image from "next/image";
+import AddToCartButton from "../cart/AddToCartButton";
 
 interface ProductDetailsProps {
   product: ProductDetail;
@@ -26,8 +27,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         </p>
         <p className="text-gray-600 mb-6">{product.description}</p>
 
-        {/* TODO: The AddToCartButton component needs to be created */}
-        {/* <AddToCartButton productId={product.id} /> */}
+        <AddToCartButton productId={product.id} />
       </div>
     </div>
   );

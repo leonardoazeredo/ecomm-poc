@@ -149,17 +149,13 @@ export default async function CartPage() {
                 <span>Subtotal</span>
                 <span>${cartTotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between mb-4 text-gray-500 text-sm">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
-              </div>
               <div className="flex justify-between font-bold text-lg border-t pt-4">
                 <span>Total</span>
                 <span>${cartTotal.toFixed(2)}</span>
               </div>
               <button
                 disabled // Disabled for PoC
-                className="mt-6 w-full bg-green-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="mt-6 w-full bg-yellow-600 text-white py-2 rounded-md font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 Proceed to Checkout (Disabled)
               </button>

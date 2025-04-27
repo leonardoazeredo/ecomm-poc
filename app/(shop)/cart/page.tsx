@@ -3,12 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { placeholderProducts, ProductDetail } from "@/lib/placeholder-data";
 
-interface CartItem {
+export interface CartItem {
   productId: string;
   quantity: number;
 }
 
-interface Cart {
+export interface Cart {
   id: string;
   items: CartItem[];
 }
@@ -145,11 +145,7 @@ export default async function CartPage() {
               <h2 className="text-xl font-semibold mb-4 border-b pb-2">
                 Order Summary
               </h2>
-              <div className="flex justify-between mb-2">
-                <span>Subtotal</span>
-                <span>${cartTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-4">
+              <div className="flex justify-between font-bold text-lg pt-4">
                 <span>Total</span>
                 <span>${cartTotal.toFixed(2)}</span>
               </div>

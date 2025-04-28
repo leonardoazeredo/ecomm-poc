@@ -1,6 +1,6 @@
 import { Cart, CartItem } from "@/app/(shop)/cart/page";
 import { Redis } from "@upstash/redis";
-import { cookies } from "next/headers"; // For reading/writing cookies
+import { cookies } from "next/headers";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,

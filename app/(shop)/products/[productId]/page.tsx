@@ -18,10 +18,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <main className="container mx-auto px-4 py-8">
       <ProductDetails product={product} />
-
-      {/* <div className="mt-6"> */}
-      {/*   <AddToCartButton productId={product.id} /> */}
-      {/* </div> */}
     </main>
   );
 }

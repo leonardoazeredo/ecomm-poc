@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { placeholderProducts, ProductDetail } from "@/lib/placeholder-data";
+
 import CartItemControls from "@/components/cart/CartItemControls";
 import { getCart, getCartId } from "@/lib/upstash-redis";
+import { getProductsByIds, Product } from "@/lib/contentful";
 
 export interface CartItem {
   productId: string;
@@ -15,19 +16,29 @@ export interface Cart {
 }
 
 interface CartItemDetails extends CartItem {
-  product: ProductDetail;
+  product: Product;
   lineTotal: number;
 }
 
 // Helper to enrich cart items with product details
-function enrichCartItems(cart: Cart | null): CartItemDetails[] {
-  if (!cart || !cart.items) return [];
+function enrichCartItems(
+  cart: Cart | null,
+  contentfulProducts: Product[]
+): CartItemDetails[] {
+  if (!cart || !cart.items || contentfulProducts.length === 0) {
+    return [];
+  }
+
+  const productMap = new Map(contentfulProducts.map((p) => [p.id, p]));
 
   return cart.items
     .map((item) => {
-      const product = placeholderProducts.find((p) => p.id === item.productId);
+      const product = productMap.get(item.productId);
+
       if (!product) {
-        // Handle case where product details aren't found (maybe log error)
+        console.warn(
+          `Product details not found in Contentful fetch for productId: ${item.productId}`
+        );
         return null;
       }
       return {
@@ -41,20 +52,39 @@ function enrichCartItems(cart: Cart | null): CartItemDetails[] {
 
 export default async function CartPage() {
   const cartId = await getCartId();
-  console.log(`Cart Page rendering for cartId: ${cartId ?? "None"}`);
+  console.log(`Cart Page fetching data for cartId: ${cartId ?? "None"}`);
 
-  let cart: Cart | null = null;
+  const cart = await getCart(cartId ?? "");
 
-  if (cartId) {
-    cart = await getCart(cartId);
+  let cartItemsDetails: CartItemDetails[] = [];
+  let cartTotal = 0;
+
+  if (cart && cart.items.length > 0) {
+    const productIds = [...new Set(cart.items.map((item) => item.productId))];
+
+    if (productIds.length > 0) {
+      console.log(
+        `Fetching Contentful product details for IDs: ${productIds.join(", ")}`
+      );
+
+      const contentfulProducts = await getProductsByIds(productIds);
+
+      cartItemsDetails = enrichCartItems(cart, contentfulProducts);
+      console.log(
+        "Enriched cart items details (Contentful):",
+        cartItemsDetails
+      );
+
+      cartTotal = cartItemsDetails.reduce(
+        (sum, item) => sum + item.lineTotal,
+        0
+      );
+    } else {
+      console.log("Cart found but contained no valid product IDs.");
+    }
+  } else {
+    console.log("No cart found or cart is empty.");
   }
-
-  const cartItemsDetails = enrichCartItems(cart);
-
-  const cartTotal = cartItemsDetails.reduce(
-    (sum, item) => sum + item.lineTotal,
-    0
-  );
 
   return (
     <main className="container mx-auto px-4 py-8">

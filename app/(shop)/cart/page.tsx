@@ -1,7 +1,8 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import Image from "next/image";
 import { placeholderProducts, ProductDetail } from "@/lib/placeholder-data";
+import CartItemControls from "@/components/cart/CartItemControls";
+import { getCart, getCartId } from "@/lib/upstash-redis";
 
 export interface CartItem {
   productId: string;
@@ -16,29 +17,6 @@ export interface Cart {
 interface CartItemDetails extends CartItem {
   product: ProductDetail;
   lineTotal: number;
-}
-
-// Placeholder Function to Simulate Fetching Cart Data
-async function getCartPlaceholder(
-  cartId: string | undefined
-): Promise<Cart | null> {
-  console.log("Fetching cart placeholder for cartId:", cartId);
-  if (!cartId) {
-    return null;
-  }
-
-  // For now, return a static cart if the ID is 'dummy-cart-id'
-  if (cartId === "dummy-cart-id") {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return {
-      id: cartId,
-      items: [
-        { productId: "eco-101", quantity: 2 }, // Bamboo Tumbler
-        { productId: "tech-gdt-005", quantity: 1 }, // Smart Lamp
-      ],
-    };
-  }
-  return null;
 }
 
 // Helper to enrich cart items with product details
@@ -62,16 +40,15 @@ function enrichCartItems(cart: Cart | null): CartItemDetails[] {
 }
 
 export default async function CartPage() {
-  const cookieStore = await cookies();
-  const cartId = cookieStore.get("cartId")?.value;
+  const cartId = await getCartId();
+  console.log(`Cart Page rendering for cartId: ${cartId ?? "None"}`);
 
-  // --- Manually set a dummy cartId cookie for testing ---
-  const effectiveCartId = cartId || "dummy-cart-id";
+  let cart: Cart | null = null;
 
-  // 2. Fetch cart data using the placeholder function
-  const cart = await getCartPlaceholder(effectiveCartId);
+  if (cartId) {
+    cart = await getCart(cartId);
+  }
 
-  // 3. Enrich cart items with product details
   const cartItemsDetails = enrichCartItems(cart);
 
   const cartTotal = cartItemsDetails.reduce(
@@ -84,12 +61,9 @@ export default async function CartPage() {
       <h1 className="text-3xl font-bold mb-6">Your Shopping Cart</h1>
 
       {cartItemsDetails.length === 0 ? (
-        <div className="text-center py-10 border rounded-md bg-gray-50">
+        <div className="text-center py-10 border rounded-md">
           <p className="text-xl text-gray-600 mb-4">Your cart is empty.</p>
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-800 font-semibold"
-          >
+          <Link href="/products" className="hover:text-white-800 font-semibold">
             Continue Shopping
           </Link>
         </div>
@@ -127,9 +101,10 @@ export default async function CartPage() {
 
                   <div className="mt-2 text-sm">
                     Quantity: {item.quantity}
-                    <div className="text-blue-500 mt-1">
-                      (Controls Placeholder)
-                    </div>
+                    <CartItemControls
+                      productId={item.productId}
+                      initialQuantity={item.quantity}
+                    />
                   </div>
                 </div>
 

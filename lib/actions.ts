@@ -1,22 +1,37 @@
-"user server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import {
-  getOrSetCartId,
   addItemToCart as addItemToRedisCart,
   updateItemQuantity as updateItemQuantityInRedis,
   removeItemFromCart as removeItemFromRedisCart,
+  getCartId,
+  setCartIdCookie,
 } from "./upstash-redis";
+import { randomUUID } from "crypto";
+
+export interface CartActionState {
+  success: boolean;
+  message: string;
+  error?: { formErrors?: string[] };
+  cartId?: string;
+}
 
 export async function addToCart(
-  prevState: unknown,
+  prevState: CartActionState,
   itemData: { productId: string; quantity: number }
 ) {
-  const cartId = await getOrSetCartId();
+  let cartId = await getCartId();
 
-  console.log(`Server Action addToCart for cartId: ${cartId}`);
-  console.log("Previous State:", prevState);
-  console.log("Item Data:", itemData);
+  if (!cartId) {
+    cartId = randomUUID();
+    await setCartIdCookie(cartId);
+    console.log(`Action: addToCart | New CartID generated: ${cartId}`);
+  } else {
+    await setCartIdCookie(cartId);
+    console.log(`Action: addToCart | Existing CartID: ${cartId}`);
+  }
+  console.log(`Item: ${JSON.stringify(itemData)}`);
 
   try {
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -55,10 +70,18 @@ export async function addToCart(
 }
 
 export async function updateCartItemQuantity(
-  prevState: unknown,
+  prevState: CartActionState,
   itemData: { productId: string; newQuantity: number }
 ) {
-  const cartId = await getOrSetCartId();
+  const cartId = await getCartId();
+  if (!cartId)
+    return {
+      success: false,
+      message: "Cart not found.",
+      error: { formErrors: ["No active cart."] },
+    };
+
+  await setCartIdCookie(cartId);
   console.log(
     `Action: updateCartItemQuantity | CartID: ${cartId} | Item: ${JSON.stringify(
       itemData
@@ -94,10 +117,19 @@ export async function updateCartItemQuantity(
 }
 
 export async function removeCartItem(
-  prevState: unknown,
+  prevState: CartActionState,
   itemData: { productId: string }
 ) {
-  const cartId = await getOrSetCartId(); // Must await in Next.js 15
+  const cartId = await getCartId();
+  if (!cartId)
+    return {
+      success: false,
+      message: "Cart not found.",
+      error: { formErrors: ["No active cart."] },
+    };
+
+  await setCartIdCookie(cartId);
+
   console.log(
     `Action: removeCartItem | CartID: ${cartId} | Item: ${JSON.stringify(
       itemData

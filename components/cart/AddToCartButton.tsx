@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState, useRef } from "react";
-import { addToCart } from "@/lib/actions";
+import { useActionState, useEffect, useState } from "react";
+import { addToCart, CartActionState } from "@/lib/actions";
 
 interface AddToCartButtonProps {
   productId: string;
@@ -9,14 +9,16 @@ interface AddToCartButtonProps {
 
 export default function AddToCartButton({ productId }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
-  const formRef = useRef<HTMLFormElement>(null);
 
-  const initialState = null;
+  const initialState = {
+    success: false,
+    message: "",
+  };
 
-  const [state, formAction, isPending] = useActionState(
-    addToCart,
-    initialState
-  );
+  const [state, formAction, isPending] = useActionState<
+    CartActionState,
+    { productId: string; quantity: number }
+  >(addToCart, initialState);
 
   useEffect(() => {
     if (state?.success) {
@@ -39,13 +41,17 @@ export default function AddToCartButton({ productId }: AddToCartButtonProps) {
     }
   };
 
-  const itemData = {
-    productId: productId,
-    quantity: quantity,
+  const handleAddToCartSubmit = () => {
+    const payload = {
+      productId: productId,
+      quantity: quantity,
+    };
+
+    formAction(payload);
   };
 
   return (
-    <form action={() => formAction(itemData)} ref={formRef}>
+    <form action={handleAddToCartSubmit}>
       <div className="mb-4 flex items-center gap-4">
         <label htmlFor={`quantity-${productId}`} className="font-medium">
           Quantity:
@@ -61,6 +67,7 @@ export default function AddToCartButton({ productId }: AddToCartButtonProps) {
           disabled={isPending}
         />
       </div>
+      <input type="hidden" name="productId" value={productId} />
 
       <button
         type="submit"

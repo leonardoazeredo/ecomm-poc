@@ -121,3 +121,58 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
     return [];
   }
 }
+
+export interface CarouselItem {
+  imageUrl: string;
+  alt: string;
+  contentfulId: string;
+}
+
+export async function getProductsForCarousel(
+  limit: number = 8
+): Promise<CarouselItem[]> {
+  try {
+    console.log(`Fetching ${limit} products (name, image) for carousel...`);
+    const entries = await contentfulClient.getEntries({
+      content_type: "product",
+      select: ["fields.name", "fields.imageUrl"],
+      include: 1,
+      limit: limit,
+    });
+
+    console.log(`Fetched ${entries.items.length} raw entries for carousel.`);
+
+    if (entries.items) {
+      return entries.items
+        .map((entry) => {
+          const fields = entry.fields;
+          const name = fields.name ?? "Unnamed Product";
+          const imageUrlAsset = fields.imageUrl as Asset | undefined;
+          const imageUrl = imageUrlAsset?.fields?.file?.url;
+
+          if (imageUrl && typeof imageUrl === "string") {
+            return {
+              imageUrl: imageUrl.startsWith("//")
+                ? `https:${imageUrl}`
+                : imageUrl,
+              alt: name,
+              contentfulId: entry.sys.id,
+            };
+          } else {
+            console.warn(
+              `Carousel item ${entry.sys.id} ('${name}') missing valid image URL.`
+            );
+            return null;
+          }
+        })
+        .filter((item): item is CarouselItem => item !== null);
+    }
+    return [];
+  } catch (error) {
+    console.error(
+      "Error fetching products for carousel from Contentful:",
+      error
+    );
+    return [];
+  }
+}

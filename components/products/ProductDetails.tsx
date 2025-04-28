@@ -1,9 +1,10 @@
-import { ProductDetail } from "@/lib/placeholder-data";
 import Image from "next/image";
 import AddToCartButton from "../cart/AddToCartButton";
+import { Product } from "@/lib/contentful";
+import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
 
 interface ProductDetailsProps {
-  product: ProductDetail;
+  product: Product;
 }
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
@@ -25,7 +26,13 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         <p className="text-2xl text-gray-800 mb-4">
           ${product.price.toFixed(2)}
         </p>
-        <p className="text-gray-600 mb-6">{product.description}</p>
+        {product.description ? (
+          <p className="text-gray-600 mb-6">
+            {documentToReactComponents(product.description)}
+          </p>
+        ) : (
+          <p className="text-gray-500">No description available.</p>
+        )}
 
         <AddToCartButton productId={product.id} />
       </div>

@@ -1,10 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-
-import { ProductDetail } from "@/lib/placeholder-data";
+import { Product } from "@/lib/contentful";
 
 interface ProductCardProps {
-  product: ProductDetail;
+  product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {

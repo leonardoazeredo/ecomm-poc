@@ -1,17 +1,6 @@
 import ProductDetails from "@/components/products/ProductDetails";
-import { placeholderProducts, ProductDetail } from "@/lib/placeholder-data";
+import { getProductBySlug } from "@/lib/contentful";
 import { notFound } from "next/navigation";
-
-async function getProductDetailsPlaceholder(
-  productIdSlug: string
-): Promise<ProductDetail | null> {
-  // TODO: Replace with actual data fetching from lib/contentful.ts using productId (slug)
-
-  await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate network delay
-
-  const product = placeholderProducts.find((p) => p.slug === productIdSlug);
-  return product || null;
-}
 
 interface ProductPageProps {
   params: Promise<{ productId: string }>;
@@ -20,7 +9,7 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { productId } = await params;
 
-  const product = await getProductDetailsPlaceholder(productId);
+  const product = await getProductBySlug(productId);
 
   if (!product) {
     notFound();

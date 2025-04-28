@@ -1,12 +1,8 @@
 import ProductCard from "@/components/products/ProductCard";
-import { placeholderProducts, ProductDetail } from "@/lib/placeholder-data";
+import { getAllProducts, Product } from "@/lib/contentful";
 
-async function getProductsPlaceholder(): Promise<ProductDetail[]> {
-  // TODO: Replace with actual data fetching from lib/contentful.ts
-
-  await new Promise((resolve) => setTimeout(resolve, 150));
-
-  return placeholderProducts;
+async function getProductsPlaceholder(): Promise<Product[]> {
+  return await getAllProducts();
 }
 
 export default async function ProductListPage() {

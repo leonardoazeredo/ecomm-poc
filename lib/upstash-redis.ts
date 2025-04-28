@@ -1,11 +1,10 @@
-import { Redis } from "@upstash/redis";
-import { cookies } from "next/headers";
-import { randomUUID } from "crypto";
 import { Cart, CartItem } from "@/app/(shop)/cart/page";
+import { Redis } from "@upstash/redis";
+import { cookies } from "next/headers"; // For reading/writing cookies
 
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL,
-  token: process.env.KV_REST_API_TOKEN,
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
 });
 
 const CART_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -14,15 +13,19 @@ function getCartKey(cartId: string): string {
   return `cart:${cartId}`;
 }
 
-export async function getOrSetCartId(): Promise<string> {
+//  Gets the cart ID from cookies. READ-ONLY. Safe for Server Components.
+//  Returns the cart ID string or undefined if not found.
+
+export async function getCartId(): Promise<string | undefined> {
   const cookieStore = await cookies();
-  let cartId = cookieStore.get("cartId")?.value;
+  const cartId = cookieStore.get("cartId")?.value;
+  return cartId;
+}
 
-  if (!cartId) {
-    cartId = randomUUID();
-    console.log(`Generated new cartId and setting cookie: ${cartId}`);
-  }
+// Sets the cart ID cookie. ONLY FOR USE IN SERVER ACTIONS / ROUTE HANDLERS.
 
+export async function setCartIdCookie(cartId: string): Promise<void> {
+  const cookieStore = await cookies(); // Need to await cookies() here too
   cookieStore.set("cartId", cartId, {
     path: "/",
     maxAge: CART_EXPIRATION_SECONDS,
@@ -30,22 +33,22 @@ export async function getOrSetCartId(): Promise<string> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
-  return cartId;
+  console.log(`Cart ID cookie set/refreshed: ${cartId}`);
 }
 
-// Fetches the cart items from Upstash Redis for a given cart ID.
-// Uses Redis Hash.
+// Deletes the cart ID cookie. ONLY FOR USE IN SERVER ACTIONS / ROUTE HANDLERS.
+
+export async function deleteCartIdCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete("cartId");
+  console.log(`Cart ID cookie deleted.`);
+}
 
 export async function getCart(cartId: string): Promise<Cart | null> {
   if (!cartId) return null;
-
   const cartKey = getCartKey(cartId);
-
-  const cartItemsRaw = await redis.hgetall(cartKey);
-
-  if (!cartItemsRaw) {
-    return null;
-  }
+  const cartItemsRaw = await redis.hgetall(cartKey); // hgetall returns Record<string, unknown> | null
+  if (!cartItemsRaw) return null;
 
   const items: CartItem[] = Object.entries(cartItemsRaw)
     .map(([productId, quantity]) => ({
@@ -53,92 +56,61 @@ export async function getCart(cartId: string): Promise<Cart | null> {
       quantity: Number(quantity) || 0,
     }))
     .filter((item) => item.quantity > 0);
+  if (items.length === 0) return null;
 
-  if (items.length === 0) {
-    return null; // Cart is effectively empty
-  }
-
-  // Refresh cart expiration on read
   await redis.expire(cartKey, CART_EXPIRATION_SECONDS);
-
   return { id: cartId, items };
 }
-
-// Adds an item to the cart or updates its quantity if it already exists.
-// Uses Redis Hash (hincrby).
 
 export async function addItemToCart(
   cartId: string,
   productId: string,
   quantity: number
 ): Promise<void> {
-  if (!cartId || !productId || quantity <= 0) {
-    throw new Error("Invalid arguments for addItemToCart");
-  }
+  if (!cartId || !productId || quantity <= 0) throw new Error("Invalid args");
   const cartKey = getCartKey(cartId);
-
   await redis.hincrby(cartKey, productId, quantity);
   await redis.expire(cartKey, CART_EXPIRATION_SECONDS);
-  console.log(
-    `Item ${productId} (qty: ${quantity}) added/updated in Upstash Redis cart ${cartId}`
-  );
+  console.log(`Item ${productId} added/updated in Redis cart ${cartId}`);
 }
 
-// Removes an item completely from the cart.
-// Uses Redis Hash (hdel).
 export async function removeItemFromCart(
   cartId: string,
   productId: string
 ): Promise<void> {
-  if (!cartId || !productId) {
-    throw new Error("Invalid arguments for removeItemFromCart");
-  }
+  if (!cartId || !productId) throw new Error("Invalid args");
   const cartKey = getCartKey(cartId);
-
   const deletedCount = await redis.hdel(cartKey, productId);
   console.log(
-    `Item ${productId} removed from Upstash Redis cart ${cartId} (Deleted: ${deletedCount})`
+    `Item ${productId} removed from Redis cart ${cartId} (Deleted: ${deletedCount})`
   );
-  if (deletedCount > 0) {
-    await redis.expire(cartKey, CART_EXPIRATION_SECONDS);
-  }
+  if (deletedCount > 0) await redis.expire(cartKey, CART_EXPIRATION_SECONDS);
 }
-
-// Updates the quantity of a specific item in the cart.
-// Uses Redis Hash (hset). If quantity is 0 or less, removes the item.
 
 export async function updateItemQuantity(
   cartId: string,
   productId: string,
   quantity: number
 ): Promise<void> {
-  if (!cartId || !productId) {
-    throw new Error("Invalid arguments for updateItemQuantity");
-  }
+  if (!cartId || !productId) throw new Error("Invalid args");
   const cartKey = getCartKey(cartId);
   if (quantity <= 0) {
     await removeItemFromCart(cartId, productId);
   } else {
-    // redis.hset signature might differ slightly for multiple fields vs single
-    // For single field update, this is standard:
     await redis.hset(cartKey, { [productId]: quantity });
-    console.log(
-      `Item ${productId} quantity updated to ${quantity} in Upstash Redis cart ${cartId}`
-    );
     await redis.expire(cartKey, CART_EXPIRATION_SECONDS);
+    console.log(
+      `Item ${productId} quantity updated to ${quantity} in Redis cart ${cartId}`
+    );
   }
 }
 
-// Deletes the entire cart from Upstash Redis and removes the cookie.
+// This function DELETES THE CART DATA FROM REDIS.
+// It should NOT delete the cookie here. Cookie deletion happens in the action.
 
 export async function deleteCart(cartId: string): Promise<void> {
   if (!cartId) return;
   const cartKey = getCartKey(cartId);
-
   const deleted = await redis.del(cartKey);
-  console.log(`Upstash Redis Cart ${cartId} deleted (Result: ${deleted}).`);
-
-  const cookieStore = await cookies();
-  cookieStore.delete("cartId");
-  console.log(`Cart ID cookie cleared.`);
+  console.log(`Redis Cart ${cartId} data deleted (Result: ${deleted}).`);
 }

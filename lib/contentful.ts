@@ -1,16 +1,7 @@
 import * as contentful from "contentful";
 import { Asset, Entry } from "contentful";
 import { type Document as RichTextDocument } from "@contentful/rich-text-types";
-
-export interface Product {
-  contentfulId: string;
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  description?: RichTextDocument;
-  imageUrl: string;
-}
+import { Product, CarouselItem } from "./types";
 
 const spaceId = process.env.CONTENTFUL_SPACE_ID;
 const accessToken = process.env.CONTENTFUL_ACCESS_TOKEN;
@@ -120,12 +111,6 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
     );
     return [];
   }
-}
-
-export interface CarouselItem {
-  imageUrl: string;
-  alt: string;
-  contentfulId: string;
 }
 
 export async function getProductsForCarousel(

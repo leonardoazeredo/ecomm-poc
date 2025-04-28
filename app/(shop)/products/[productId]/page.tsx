@@ -1,10 +1,7 @@
 import ProductDetails from "@/components/products/ProductDetails";
 import { getProductBySlug } from "@/lib/contentful";
+import { ProductPageProps } from "@/lib/types";
 import { notFound } from "next/navigation";
-
-interface ProductPageProps {
-  params: Promise<{ productId: string }>;
-}
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { productId } = await params;

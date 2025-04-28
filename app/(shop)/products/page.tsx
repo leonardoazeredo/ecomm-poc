@@ -1,12 +1,8 @@
 import ProductCard from "@/components/products/ProductCard";
-import { getAllProducts, Product } from "@/lib/contentful";
-
-async function getProductsPlaceholder(): Promise<Product[]> {
-  return await getAllProducts();
-}
+import { getAllProducts } from "@/lib/contentful";
 
 export default async function ProductListPage() {
-  const products = await getProductsPlaceholder();
+  const products = await getAllProducts();
 
   return (
     <main className="container mx-auto px-4 py-8">

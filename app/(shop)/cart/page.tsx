@@ -3,22 +3,8 @@ import Image from "next/image";
 
 import CartItemControls from "@/components/cart/CartItemControls";
 import { getCart, getCartId } from "@/lib/upstash-redis";
-import { getProductsByIds, Product } from "@/lib/contentful";
-
-export interface CartItem {
-  productId: string;
-  quantity: number;
-}
-
-export interface Cart {
-  id: string;
-  items: CartItem[];
-}
-
-interface CartItemDetails extends CartItem {
-  product: Product;
-  lineTotal: number;
-}
+import { getProductsByIds } from "@/lib/contentful";
+import { Cart, CartItemDetails, Product } from "@/lib/types";
 
 // Helper to enrich cart items with product details
 function enrichCartItems(
@@ -54,13 +40,15 @@ export default async function CartPage() {
   const cartId = await getCartId();
   console.log(`Cart Page fetching data for cartId: ${cartId ?? "None"}`);
 
-  const cart = await getCart(cartId ?? "");
+  const cart: Cart | null = await getCart(cartId ?? "");
 
   let cartItemsDetails: CartItemDetails[] = [];
   let cartTotal = 0;
 
   if (cart && cart.items.length > 0) {
-    const productIds = [...new Set(cart.items.map((item) => item.productId))];
+    const productIds: string[] = [
+      ...new Set(cart.items.map((item) => item.productId)),
+    ];
 
     if (productIds.length > 0) {
       console.log(

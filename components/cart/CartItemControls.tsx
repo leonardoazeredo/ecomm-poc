@@ -1,16 +1,8 @@
 "use client";
 
 import { useState, useActionState, useEffect } from "react";
-import {
-  updateCartItemQuantity,
-  removeCartItem,
-  CartActionState,
-} from "@/lib/actions";
-
-interface CartItemControlsProps {
-  productId: string;
-  initialQuantity: number;
-}
+import { updateCartItemQuantity, removeCartItem } from "@/lib/actions";
+import { CartActionState, CartItemControlsProps } from "@/lib/types";
 
 export default function CartItemControls({
   productId,

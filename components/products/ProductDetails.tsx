@@ -1,11 +1,8 @@
 import Image from "next/image";
 import AddToCartButton from "../cart/AddToCartButton";
-import { Product } from "@/lib/contentful";
-import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
 
-interface ProductDetailsProps {
-  product: Product;
-}
+import { documentToReactComponents } from "@contentful/rich-text-react-renderer";
+import { ProductDetailsProps } from "@/lib/types";
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
   return (

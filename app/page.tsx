@@ -1,6 +1,7 @@
 import HeroSection from "@/components/home/HeroSection";
-import ProductCarousel from "@/components/home/ProductsCarousel";
-import { CarouselItem, getProductsForCarousel } from "@/lib/contentful";
+import ProductsCarousel from "@/components/home/ProductsCarousel";
+import { getProductsForCarousel } from "@/lib/contentful";
+import { CarouselItem } from "@/lib/types";
 
 export default async function Home() {
   const carouselItems: CarouselItem[] = await getProductsForCarousel(10);
@@ -10,7 +11,7 @@ export default async function Home() {
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <HeroSection />
 
-        <ProductCarousel items={carouselItems} />
+        <ProductsCarousel items={carouselItems} />
       </main>
     </div>
   );

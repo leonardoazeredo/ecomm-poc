@@ -1,11 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { addToCart, CartActionState } from "@/lib/actions";
-
-interface AddToCartButtonProps {
-  productId: string;
-}
+import { addToCart } from "@/lib/actions";
+import { AddToCartButtonProps, CartActionState } from "@/lib/types";
 
 export default function AddToCartButton({ productId }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);

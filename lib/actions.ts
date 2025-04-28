@@ -9,13 +9,7 @@ import {
   setCartIdCookie,
 } from "./upstash-redis";
 import { randomUUID } from "crypto";
-
-export interface CartActionState {
-  success: boolean;
-  message: string;
-  error?: { formErrors?: string[] };
-  cartId?: string;
-}
+import { CartActionState } from "./types";
 
 export async function addToCart(
   prevState: CartActionState,
@@ -34,8 +28,6 @@ export async function addToCart(
   console.log(`Item: ${JSON.stringify(itemData)}`);
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     const { productId, quantity } = itemData;
 
     if (quantity <= 0) {

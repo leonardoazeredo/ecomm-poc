@@ -1,10 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Product } from "@/lib/contentful";
 
-interface ProductCardProps {
-  product: Product;
-}
+import { ProductCardProps } from "@/lib/types";
 
 export default function ProductCard({ product }: ProductCardProps) {
   return (

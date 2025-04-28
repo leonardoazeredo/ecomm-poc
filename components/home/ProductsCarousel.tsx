@@ -1,15 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-
-interface CarouselItem {
-  imageUrl: string;
-  alt: string;
-  contentfulId: string;
-}
-
-interface ProductCarouselProps {
-  items: CarouselItem[];
-}
+import { ProductCarouselProps } from "@/lib/types";
 
 export default function ProductCarousel({ items }: ProductCarouselProps) {
   if (!items || items.length === 0) {
